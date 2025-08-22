@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<library path="concentric_circles_rviz_plugin">
+  <class name="concentric_circles/ConcentricCirclesDisplay" type="concentric_circles::ConcentricCirclesDisplay" base_class_type="rviz_common::Display">
+    <description>Concentric circles display for RViz2</description>
+  </class>
+</library>
