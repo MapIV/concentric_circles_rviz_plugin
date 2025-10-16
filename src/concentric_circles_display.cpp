@@ -75,6 +75,7 @@ void ConcentricCirclesDisplay::onInitialize()
 
   updateStyle();
   updateGeometry();
+  updateTextSize();
 }
 
 void ConcentricCirclesDisplay::onEnable()
