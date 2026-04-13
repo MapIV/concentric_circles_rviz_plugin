@@ -26,6 +26,17 @@ ConcentricCirclesDisplay::~ConcentricCirclesDisplay()
   }
   circles_.clear();
 
+  for (auto node : text_nodes_) {
+    node->detachAllObjects();
+    scene_node_->removeAndDestroyChild(node);
+  }
+  text_nodes_.clear();
+
+  for (auto label : text_labels_) {
+    delete label;
+  }
+  text_labels_.clear();
+
   if (scene_node_) {
     scene_node_->getParentSceneNode()->removeChild(scene_node_);
     scene_node_ = nullptr;
@@ -60,6 +71,13 @@ void ConcentricCirclesDisplay::onInitialize()
   resolution_property_->setMin(3);
   resolution_property_->setMax(99);
 
+  plane_property_ = new rviz_common::properties::EnumProperty(
+    "Plane", "XY", "Plane on which to draw the concentric circles", this,
+    SLOT(updateGeometry()), this);
+  plane_property_->addOption("XY", 0);
+  plane_property_->addOption("XZ", 1);
+  plane_property_->addOption("YZ", 2);
+
   frame_property_ = new rviz_common::properties::TfFrameProperty(
     "Reference Frame", "base_link", "Reference frame for circles", this, nullptr, false,
     SLOT(updateGeometry()), this);
@@ -72,6 +90,12 @@ void ConcentricCirclesDisplay::onInitialize()
     "Text Size", 5.0f, "Character height of the radius labels in meters", this,
     SLOT(updateTextSize()), this);
   text_size_property_->setMin(0.0f);
+
+  text_angle_property_ = new rviz_common::properties::IntProperty(
+    "Text Angle", 0, "Angle in degrees (0-359) where text labels are placed on each circle", this,
+    SLOT(updateGeometry()), this);
+  text_angle_property_->setMin(0);
+  text_angle_property_->setMax(359);
 
   updateStyle();
   updateGeometry();
@@ -135,6 +159,12 @@ void ConcentricCirclesDisplay::updateGeometry()
   }
   circles_.clear();
 
+  for (auto node : text_nodes_) {
+    node->detachAllObjects();
+    scene_node_->removeAndDestroyChild(node);
+  }
+  text_nodes_.clear();
+
   for (auto label : text_labels_) {
     delete label;
   }
@@ -148,6 +178,7 @@ void ConcentricCirclesDisplay::updateGeometry()
   }
 
   int num_circles = static_cast<int>(std::floor(max_radius_ / spacing_));
+  const int plane = plane_property_->getOptionInt();
 
   for (int i = 1; i <= num_circles; ++i) {
     rviz_rendering::BillboardLine * circle_line =
@@ -160,10 +191,18 @@ void ConcentricCirclesDisplay::updateGeometry()
     for (int s = 0; s <= resolution_; ++s) {
       const float theta =
         (2.0f * Ogre::Math::PI * static_cast<float>(s)) / static_cast<float>(resolution_);
-      const float x = r * std::cos(theta);
-      const float y = r * std::sin(theta);
+      const float a = r * std::cos(theta);
+      const float b = r * std::sin(theta);
 
-      circle_line->addPoint(Ogre::Vector3(x, y, 0.0f), color_);
+      Ogre::Vector3 point;
+      if (plane == 0) {        // XY
+        point = Ogre::Vector3(a, b, 0.0f);
+      } else if (plane == 1) { // XZ
+        point = Ogre::Vector3(a, 0.0f, b);
+      } else {                 // YZ
+        point = Ogre::Vector3(0.0f, a, b);
+      }
+      circle_line->addPoint(point, color_);
     }
 
     circles_.push_back(circle_line);
@@ -171,11 +210,30 @@ void ConcentricCirclesDisplay::updateGeometry()
     std::stringstream ss;
     ss << std::fixed << std::setprecision(0) << r;
 
+    Ogre::SceneNode * text_node = scene_node_->createChildSceneNode();
+
+    const float angle_rad =
+      Ogre::Degree(static_cast<float>(text_angle_property_->getInt())).valueRadians();
+    const float ta = r * std::cos(angle_rad);
+    const float tb = r * std::sin(angle_rad);
+
+    Ogre::Vector3 text_pos;
+    Ogre::Quaternion text_rot = Ogre::Quaternion::IDENTITY;
+    if (plane == 0) {        // XY
+      text_pos = Ogre::Vector3(ta, tb, 0.0f);
+      text_rot = Ogre::Quaternion(Ogre::Degree(-90), Ogre::Vector3::UNIT_X);
+    } else if (plane == 1) { // XZ
+      text_pos = Ogre::Vector3(ta, 0.0f, tb);
+    } else {                 // YZ
+      text_pos = Ogre::Vector3(0.0f, ta, tb);
+      text_rot = Ogre::Quaternion(Ogre::Degree(90), Ogre::Vector3::UNIT_Y);
+    }
+    text_node->setPosition(text_pos);
+    text_node->setOrientation(text_rot);
+
     rviz_rendering::MovableText * text_label =
       new rviz_rendering::MovableText(ss.str());
-    scene_node_->attachObject(text_label);
-
-    text_label->setLocalTranslation(Ogre::Vector3(r, 0.0f, 0.0f));
+    text_node->attachObject(text_label);
 
     text_label->setTextAlignment(
       rviz_rendering::MovableText::HorizontalAlignment::H_LEFT,
@@ -185,6 +243,7 @@ void ConcentricCirclesDisplay::updateGeometry()
     text_label->setVisible(show_text_);
 
     text_labels_.push_back(text_label);
+    text_nodes_.push_back(text_node);
   }
 
   if (context_) {
