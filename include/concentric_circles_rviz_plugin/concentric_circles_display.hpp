@@ -9,6 +9,7 @@
 #include <rviz_common/frame_manager_iface.hpp>
 #include <rviz_common/properties/bool_property.hpp>
 #include <rviz_common/properties/color_property.hpp>
+#include <rviz_common/properties/enum_property.hpp>
 #include <rviz_common/properties/float_property.hpp>
 #include <rviz_common/properties/int_property.hpp>
 #include <rviz_common/properties/parse_color.hpp>
@@ -48,6 +49,7 @@ private Q_SLOTS:
 
 private:
   rviz_common::properties::TfFrameProperty * frame_property_{nullptr};
+  rviz_common::properties::EnumProperty * plane_property_{nullptr};
   rviz_common::properties::ColorProperty * color_property_{nullptr};
   rviz_common::properties::FloatProperty * line_width_property_{nullptr};
   rviz_common::properties::FloatProperty * max_radius_property_{nullptr};
@@ -55,9 +57,11 @@ private:
   rviz_common::properties::IntProperty * resolution_property_{nullptr};
   rviz_common::properties::BoolProperty * show_text_property_{nullptr};
   rviz_common::properties::FloatProperty * text_size_property_{nullptr};
+  rviz_common::properties::IntProperty * text_angle_property_{nullptr};
 
   std::vector<rviz_rendering::BillboardLine *> circles_;
   std::vector<rviz_rendering::MovableText *> text_labels_;
+  std::vector<Ogre::SceneNode *> text_nodes_;
   Ogre::SceneNode * scene_node_{nullptr};
 
   Ogre::ColourValue color_{0.0f, 0.0f, 0.0f, 1.0f};
