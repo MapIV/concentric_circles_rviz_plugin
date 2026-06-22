@@ -6,9 +6,14 @@
 #include <rviz_common/properties/parse_color.hpp>
 #include <rviz_rendering/objects/billboard_line.hpp>
 
+#include <OgreBillboardChain.h>
+#include <OgreMaterial.h>
+#include <OgrePass.h>
 #include <OgreQuaternion.h>
+#include <OgreRenderQueue.h>
 #include <OgreSceneManager.h>
 #include <OgreSceneNode.h>
+#include <OgreTechnique.h>
 #include <OgreVector3.h>
 #include <rcl/time.h>
 
@@ -203,6 +208,16 @@ void ConcentricCirclesDisplay::updateGeometry()
         point = Ogre::Vector3(0.0f, a, b);
       }
       circle_line->addPoint(point, color_);
+    }
+
+    // Render the circles at the very bottom: no depth write (never occlude other
+    // displays) + an early render queue (painted before the main scene). Text
+    // labels keep their default (top) ordering.
+    if (auto mat = circle_line->getMaterial()) {
+      mat->getTechnique(0)->getPass(0)->setDepthWriteEnabled(false);
+    }
+    for (auto * chain : circle_line->getChains()) {
+      chain->setRenderQueueGroup(static_cast<Ogre::uint8>(Ogre::RENDER_QUEUE_MAIN - 1));
     }
 
     circles_.push_back(circle_line);
