@@ -46,6 +46,10 @@ install(FILES plugin_description.xml
 DESTINATION share/${PROJECT_NAME}
 )
 
+install(DIRECTORY icons
+DESTINATION share/${PROJECT_NAME}
+)
+
 # Register plugin description for rviz_common pluginlib discovery
 pluginlib_export_plugin_description_file(rviz_common plugin_description.xml)
 
