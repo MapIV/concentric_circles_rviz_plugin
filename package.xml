@@ -4,7 +4,7 @@
 <version>0.1.0</version>
 <description>RViz2 display plugin: concentric circles</description>
 <maintainer email="urasakikeisuke@gmail.com">urasakikeisuke</maintainer>
-<license>Apache License 2.0</license>
+<license>Apache-2.0</license>
 
 <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
